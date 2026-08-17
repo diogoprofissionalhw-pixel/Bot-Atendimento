@@ -9,18 +9,23 @@ com painel interno de Pendências e Aguardando aprovação. Arquitetura multi-te
 src/                 front-end (React + Vite + Tailwind)
   pages/CentralAjuda  FAQ + chat + Reclame Aqui (o que o cliente final vê)
   pages/Painel        Pendências + Aguardando aprovação (equipe interna)
-server/               backend (Express) — proxy da API MiniMax M3 e regras de decisão
+api/                  Vercel Functions — proxy da API MiniMax M3 e regras de decisão
 supabase/migrations/  schema multi-tenant com RLS por client_id
 ```
+
+Publicado na Vercel: o front (Vite) e o backend (`api/chat.ts`, uma Vercel
+Function) sobem juntos no mesmo deploy.
 
 ## Rodando localmente
 
 ```bash
 npm install
 cp .env.example .env   # preencher com suas chaves
-npm run server &       # backend na porta 8787
-npm run dev             # front na porta 5173
+npx vercel dev          # sobe front + api/ juntos, como na Vercel
 ```
+
+(`npm run dev` também funciona para só o front, mas aí `/api/chat` não responde
+localmente — use `vercel dev` para testar o fluxo completo.)
 
 Rode a migration `supabase/migrations/0001_init.sql` no seu projeto Supabase antes de usar.
 
@@ -32,8 +37,9 @@ Rode a migration `supabase/migrations/0001_init.sql` no seu projeto Supabase ant
 - **EmailJS via Reply-To**: o formulário de Reclame Aqui nunca falsifica o
   "From" — usa a caixa real do cliente conectada ao EmailJS, com o e-mail do
   usuário final como `reply_to`.
-- **Credencial da IA no backend**: a chave da MiniMax M3 fica só no `server/`,
-  nunca no bundle do front (resolve CORS e vazamento de credencial).
+- **Credencial da IA no backend**: a chave da MiniMax M3 fica só na Vercel
+  Function (`api/chat.ts`), nunca no bundle do front (resolve CORS e
+  vazamento de credencial).
 - **Critério de confiança objetivo**: o modelo retorna um score 0–1 junto da
   resposta; acima do `ai_confidence_threshold` do cliente responde direto,
   entre esse valor e 0.4 vai para aprovação, abaixo de 0.4 vira pendência.

@@ -1,8 +1,6 @@
-import { Router } from "express";
-import { askMiniMax } from "../minimax.js";
-import { supabaseAdmin } from "../supabaseAdmin.js";
-
-export const chatRouter = Router();
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { askMiniMax } from "./_lib/minimax.js";
+import { supabaseAdmin } from "./_lib/supabaseAdmin.js";
 
 /**
  * POST /api/chat
@@ -13,7 +11,11 @@ export const chatRouter = Router();
  *  - confidence >= 0.4 e < threshold    -> vai para 'awaiting_approval'
  *  - confidence < 0.4                   -> vai para 'pending_items' (IA não sabe)
  */
-chatRouter.post("/", async (req, res) => {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
   const { clientId, conversationId, question } = req.body ?? {};
   if (!clientId || !conversationId || !question) {
     return res.status(400).json({ error: "clientId, conversationId e question são obrigatórios" });
@@ -75,4 +77,4 @@ chatRouter.post("/", async (req, res) => {
     question,
   });
   return res.json({ status: "pending" });
-});
+}
