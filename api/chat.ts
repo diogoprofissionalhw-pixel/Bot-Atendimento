@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { askMiniMax } from "./_lib/minimax.js";
+import { askAi } from "./_lib/ai.js";
 import { supabaseAdmin } from "./_lib/supabaseAdmin.js";
 
 /**
@@ -46,7 +46,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     body: question,
   });
 
-  const decision = await askMiniMax(question, knowledgeContext);
+  let decision;
+  try {
+    decision = await askAi(question, knowledgeContext);
+  } catch (err) {
+    console.error("Erro ao chamar a IA:", err);
+    return res.status(502).json({ error: "Falha ao consultar a IA", detail: String(err) });
+  }
   const threshold = config.ai_confidence_threshold as number;
   const LOW_CONFIDENCE_FLOOR = 0.4;
 
