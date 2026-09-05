@@ -1,23 +1,27 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseAdmin } from "./_lib/supabaseAdmin.js";
+import { resolveClientId } from "./_lib/resolveClientId.js";
 
 /**
  * POST /api/conversations
- * body: { clientId, channel, customerRef? }
+ * body: { channel, customerRef? }
  *
- * Abre uma conversa para o cliente final (chat ou e-mail). Antes era um
- * INSERT direto do front na tabela conversations com policy pública
- * (aceitava client_id arbitrário, permitindo forjar dados em nome de outro
- * tenant); agora o client_id vem do endpoint e é o único aceito.
+ * Abre uma conversa para o cliente final (chat ou e-mail). O tenant é
+ * derivado do Host da requisição, nunca de um clientId enviado pelo front.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const { clientId, channel, customerRef } = req.body ?? {};
-  if (!clientId || !channel) {
-    return res.status(400).json({ error: "clientId e channel são obrigatórios" });
+  const clientId = await resolveClientId(req);
+  if (!clientId) {
+    return res.status(404).json({ error: "Domínio não configurado para nenhum cliente" });
+  }
+
+  const { channel, customerRef } = req.body ?? {};
+  if (!channel) {
+    return res.status(400).json({ error: "channel é obrigatório" });
   }
 
   const { data, error } = await supabaseAdmin

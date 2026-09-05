@@ -1,21 +1,20 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseAdmin } from "./_lib/supabaseAdmin.js";
+import { resolveClientId } from "./_lib/resolveClientId.js";
 
 /**
- * GET /api/faq?clientId=...
+ * GET /api/faq
  *
- * Lista as perguntas frequentes do cliente. Antes era um SELECT direto do
- * front na tabela knowledge_base com policy pública (vazava a base de todos
- * os tenants); agora o filtro por client_id é aplicado no servidor.
+ * Lista as perguntas frequentes do tenant, derivado do Host da requisição.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const clientId = req.query.clientId;
-  if (!clientId || typeof clientId !== "string") {
-    return res.status(400).json({ error: "clientId é obrigatório" });
+  const clientId = await resolveClientId(req);
+  if (!clientId) {
+    return res.status(404).json({ error: "Domínio não configurado para nenhum cliente" });
   }
 
   const { data, error } = await supabaseAdmin

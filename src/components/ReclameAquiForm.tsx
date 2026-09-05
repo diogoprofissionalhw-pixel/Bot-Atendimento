@@ -1,6 +1,5 @@
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
-import { CURRENT_CLIENT_ID } from "../lib/supabaseClient";
 
 interface EmailConfig {
   emailjs_service_id: string;
@@ -19,7 +18,7 @@ export function ReclameAquiForm() {
     e.preventDefault();
     setStatus("sending");
 
-    const configRes = await fetch(`/api/email-config?clientId=${encodeURIComponent(CURRENT_CLIENT_ID)}`);
+    const configRes = await fetch("/api/email-config");
     if (!configRes.ok) {
       setStatus("error");
       return;
@@ -39,7 +38,7 @@ export function ReclameAquiForm() {
       const conversationRes = await fetch("/api/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId: CURRENT_CLIENT_ID, channel: "email", customerRef: email }),
+        body: JSON.stringify({ channel: "email", customerRef: email }),
       });
       const conversation: { id?: string } = await conversationRes.json();
 
@@ -48,7 +47,6 @@ export function ReclameAquiForm() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            clientId: CURRENT_CLIENT_ID,
             conversationId: conversation.id,
             question: message,
           }),

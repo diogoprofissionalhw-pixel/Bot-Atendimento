@@ -1,23 +1,38 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseAdmin } from "./_lib/supabaseAdmin.js";
+import { resolveClientId } from "./_lib/resolveClientId.js";
 
 /**
  * POST /api/pending-items
- * body: { clientId, conversationId, question }
+ * body: { conversationId, question }
  *
  * Registra uma pendência vinda de um canal que não passa pela IA (ex.:
- * Reclame Aqui). Antes era um INSERT direto do front na tabela
- * pending_items com policy pública (aceitava client_id arbitrário); agora
- * passa pelo backend com service role.
+ * Reclame Aqui). O tenant é derivado do Host da requisição; a conversa
+ * precisa pertencer a esse mesmo tenant.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const { clientId, conversationId, question } = req.body ?? {};
-  if (!clientId || !conversationId || !question) {
-    return res.status(400).json({ error: "clientId, conversationId e question são obrigatórios" });
+  const clientId = await resolveClientId(req);
+  if (!clientId) {
+    return res.status(404).json({ error: "Domínio não configurado para nenhum cliente" });
+  }
+
+  const { conversationId, question } = req.body ?? {};
+  if (!conversationId || !question) {
+    return res.status(400).json({ error: "conversationId e question são obrigatórios" });
+  }
+
+  const { data: conversation } = await supabaseAdmin
+    .from("conversations")
+    .select("client_id")
+    .eq("id", conversationId)
+    .single();
+
+  if (!conversation || conversation.client_id !== clientId) {
+    return res.status(404).json({ error: "Conversa não encontrada" });
   }
 
   const { error } = await supabaseAdmin

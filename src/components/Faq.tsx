@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { CURRENT_CLIENT_ID } from "../lib/supabaseClient";
 import type { KnowledgeBaseEntry } from "../types";
 
 export function Faq() {
@@ -7,7 +6,7 @@ export function Faq() {
   const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/faq?clientId=${encodeURIComponent(CURRENT_CLIENT_ID)}`)
+    fetch("/api/faq")
       .then((res) => res.json())
       .then((data: { entries: KnowledgeBaseEntry[] }) => setEntries(data.entries ?? []));
   }, []);

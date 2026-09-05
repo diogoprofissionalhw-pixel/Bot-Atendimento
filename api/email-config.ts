@@ -1,23 +1,23 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseAdmin } from "./_lib/supabaseAdmin.js";
+import { resolveClientId } from "./_lib/resolveClientId.js";
 
 /**
- * GET /api/email-config?clientId=...
+ * GET /api/email-config
  *
  * Retorna só os campos do EmailJS necessários para o formulário de Reclame
- * Aqui disparar o envio no client-side. Antes era um SELECT direto do front
- * na tabela config_per_client com policy pública (vazava a config de todos
- * os tenants, inclusive credenciais de EmailJS); agora o filtro por
- * client_id é aplicado no servidor.
+ * Aqui disparar o envio no client-side — nunca a config de IA
+ * (ai_confidence_threshold, minimax_model_cfg) do mesmo registro. O tenant
+ * é derivado do Host da requisição.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const clientId = req.query.clientId;
-  if (!clientId || typeof clientId !== "string") {
-    return res.status(400).json({ error: "clientId é obrigatório" });
+  const clientId = await resolveClientId(req);
+  if (!clientId) {
+    return res.status(404).json({ error: "Domínio não configurado para nenhum cliente" });
   }
 
   const { data, error } = await supabaseAdmin

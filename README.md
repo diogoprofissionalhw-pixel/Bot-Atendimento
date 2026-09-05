@@ -32,7 +32,11 @@ npx vercel dev          # sobe front + api/ juntos, como na Vercel
 (`npm run dev` também funciona para só o front, mas aí `/api/chat` não responde
 localmente — use `vercel dev` para testar o fluxo completo.)
 
-Rode a migration `supabase/migrations/0001_init.sql` no seu projeto Supabase antes de usar.
+Rode as migrations em `supabase/migrations/` (em ordem) no seu projeto
+Supabase antes de usar. Para testar localmente sem cadastrar um domínio em
+`client_domains`, defina `DEV_CLIENT_ID` no `.env` com o `id` do cliente de
+teste — os endpoints usam esse valor quando o Host da requisição é
+`localhost`/`127.0.0.1`.
 
 ## Decisões já tomadas (ver histórico da conversa)
 
@@ -49,11 +53,16 @@ Rode a migration `supabase/migrations/0001_init.sql` no seu projeto Supabase ant
   `tenant_isolation` (`0001_init.sql`), que exige JWT autenticado com claim
   `client_id` — por padrão nega qualquer request anônimo. O fluxo do
   cliente final (FAQ, config de e-mail, abertura de conversa, registro de
-  pendência) passa por Vercel Functions com service role
+  pendência, chat) passa por Vercel Functions com service role
   (`api/faq.ts`, `api/email-config.ts`, `api/conversations.ts`,
-  `api/pending-items.ts`) que filtram por `client_id` no servidor, em vez
-  de policies públicas no banco (ver `0002_public_access.sql` para o
-  histórico dessa correção).
+  `api/pending-items.ts`, `api/chat.ts`) em vez de policies públicas no
+  banco (ver `0002_public_access.sql` para o histórico dessa correção).
+- **`client_id` nunca vem do front**: os endpoints acima derivam o tenant a
+  partir do Host da requisição via `api/_lib/resolveClientId.ts`, que
+  consulta o mapa domínio -> `client_id` em `client_domains`
+  (`0003_client_domains.sql`). Um `clientId` enviado no body/query é
+  ignorado — do contrário, como esses endpoints usam a service role (que
+  ignora RLS), qualquer requisição poderia pedir a config de outro tenant.
 - **Critério de confiança objetivo**: o modelo retorna um score 0–1 junto da
   resposta; acima do `ai_confidence_threshold` do cliente responde direto,
   entre esse valor e 0.4 vai para aprovação, abaixo de 0.4 vira pendência.
