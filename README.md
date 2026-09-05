@@ -45,10 +45,15 @@ Rode a migration `supabase/migrations/0001_init.sql` no seu projeto Supabase ant
 - **Credencial da IA no backend**: a chave do provedor de IA fica só na
   Vercel Function (`api/chat.ts`), nunca no bundle do front (resolve CORS e
   vazamento de credencial).
-- **RLS com policies separadas para visitante anônimo e staff logado**
-  (`0002_public_access.sql`): FAQ, config de e-mail e abertura de
-  conversas/pendências são públicas; `messages`, `awaiting_approval` e
-  `staff_users` exigem JWT autenticado com `client_id`.
+- **Sem acesso público direto às tabelas**: a única policy de RLS é a
+  `tenant_isolation` (`0001_init.sql`), que exige JWT autenticado com claim
+  `client_id` — por padrão nega qualquer request anônimo. O fluxo do
+  cliente final (FAQ, config de e-mail, abertura de conversa, registro de
+  pendência) passa por Vercel Functions com service role
+  (`api/faq.ts`, `api/email-config.ts`, `api/conversations.ts`,
+  `api/pending-items.ts`) que filtram por `client_id` no servidor, em vez
+  de policies públicas no banco (ver `0002_public_access.sql` para o
+  histórico dessa correção).
 - **Critério de confiança objetivo**: o modelo retorna um score 0–1 junto da
   resposta; acima do `ai_confidence_threshold` do cliente responde direto,
   entre esse valor e 0.4 vai para aprovação, abaixo de 0.4 vira pendência.
