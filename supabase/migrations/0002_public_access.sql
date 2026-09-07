@@ -1,0 +1,19 @@
+-- Este arquivo chegou a liberar acesso publico (anonimo) direto nas tabelas
+-- knowledge_base, config_per_client, conversations e pending_items via
+-- policies `using(true)` / `with check(true)`. Isso quebrava o isolamento
+-- multi-tenant: a anon key e' compartilhada por todos os clientes, entao
+-- qualquer visitante conseguia ler a base de conhecimento e as credenciais
+-- de EmailJS de QUALQUER tenant, e inserir conversations/pending_items com
+-- client_id arbitrario.
+--
+-- Correcao: o fluxo do cliente final (FAQ, config de e-mail, abertura de
+-- conversa, registro de pendencia) agora passa por Vercel Functions
+-- (api/faq.ts, api/email-config.ts, api/conversations.ts,
+-- api/pending-items.ts) que usam a service role e filtram por client_id no
+-- servidor. Anonimo nao precisa mais de nenhuma policy propria: a policy
+-- tenant_isolation de 0001_init.sql (FOR ALL USING client_id =
+-- current_client_id()) ja nega por padrao qualquer request sem JWT
+-- autenticado, o que basta.
+--
+-- Nao ha' banco em producao ainda, entao este arquivo foi reescrito no
+-- lugar em vez de ganhar uma migration `0003` so' para desfazer o erro.

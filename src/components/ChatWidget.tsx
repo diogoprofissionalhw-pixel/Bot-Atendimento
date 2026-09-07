@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { supabase, CURRENT_CLIENT_ID } from "../lib/supabaseClient";
 import type { ChatMessage } from "../types";
 
 type ChatStatus = "answered" | "awaiting_approval" | "pending";
@@ -12,12 +11,13 @@ export function ChatWidget() {
 
   async function ensureConversation(): Promise<string> {
     if (conversationId) return conversationId;
-    const { data, error } = await supabase
-      .from("conversations")
-      .insert({ client_id: CURRENT_CLIENT_ID, channel: "chat" })
-      .select("id")
-      .single();
-    if (error || !data) throw new Error("Não foi possível iniciar a conversa");
+    const res = await fetch("/api/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channel: "chat" }),
+    });
+    const data: { id?: string } = await res.json();
+    if (!res.ok || !data.id) throw new Error("Não foi possível iniciar a conversa");
     setConversationId(data.id);
     return data.id;
   }
@@ -37,8 +37,9 @@ export function ChatWidget() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId: CURRENT_CLIENT_ID, conversationId: convId, question }),
+        body: JSON.stringify({ conversationId: convId, question }),
       });
+      if (!res.ok) throw new Error("Falha ao obter resposta do servidor");
       const data: { status: ChatStatus; answer?: string } = await res.json();
 
       const reply =

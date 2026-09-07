@@ -1,6 +1,5 @@
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
-import { supabase, CURRENT_CLIENT_ID } from "../lib/supabaseClient";
 
 interface EmailConfig {
   emailjs_service_id: string;
@@ -19,16 +18,12 @@ export function ReclameAquiForm() {
     e.preventDefault();
     setStatus("sending");
 
-    const { data: config } = await supabase
-      .from("config_per_client")
-      .select("emailjs_service_id, emailjs_template_id, emailjs_public_key")
-      .eq("client_id", CURRENT_CLIENT_ID)
-      .single<EmailConfig>();
-
-    if (!config) {
+    const configRes = await fetch("/api/email-config");
+    if (!configRes.ok) {
       setStatus("error");
       return;
     }
+    const config: EmailConfig = await configRes.json();
 
     try {
       // reply_to é o e-mail do cliente final; o "From" exibido é sempre a caixa
@@ -40,18 +35,30 @@ export function ReclameAquiForm() {
         { publicKey: config.emailjs_public_key },
       );
 
-      const { data: conversation } = await supabase
-        .from("conversations")
-        .insert({ client_id: CURRENT_CLIENT_ID, channel: "email", customer_ref: email })
-        .select("id")
-        .single();
+      const conversationRes = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: "email", customerRef: email }),
+      });
+      if (!conversationRes.ok) {
+        setStatus("error");
+        return;
+      }
+      const conversation: { id?: string } = await conversationRes.json();
 
-      if (conversation) {
-        await supabase.from("pending_items").insert({
-          client_id: CURRENT_CLIENT_ID,
-          conversation_id: conversation.id,
-          question: message,
+      if (conversation.id) {
+        const pendingItemRes = await fetch("/api/pending-items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId: conversation.id,
+            question: message,
+          }),
         });
+        if (!pendingItemRes.ok) {
+          setStatus("error");
+          return;
+        }
       }
 
       setStatus("sent");
