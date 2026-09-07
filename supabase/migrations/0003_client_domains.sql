@@ -14,3 +14,17 @@ create table client_domains (
 create index on client_domains (client_id);
 
 alter table client_domains enable row level security;
+
+-- resolveClientId sempre consulta com o Host em minusculas; normaliza aqui
+-- para que um domain cadastrado com case diferente nao cause 404 permanente.
+create or replace function client_domains_normalize_domain()
+returns trigger as $$
+begin
+  new.domain = lower(new.domain);
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger client_domains_normalize_domain
+  before insert or update on client_domains
+  for each row execute function client_domains_normalize_domain();
