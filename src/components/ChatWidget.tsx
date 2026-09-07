@@ -39,6 +39,7 @@ export function ChatWidget() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId: convId, question }),
       });
+      if (!res.ok) throw new Error("Falha ao obter resposta do servidor");
       const data: { status: ChatStatus; answer?: string } = await res.json();
 
       const reply =

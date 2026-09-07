@@ -40,10 +40,14 @@ export function ReclameAquiForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ channel: "email", customerRef: email }),
       });
+      if (!conversationRes.ok) {
+        setStatus("error");
+        return;
+      }
       const conversation: { id?: string } = await conversationRes.json();
 
       if (conversation.id) {
-        await fetch("/api/pending-items", {
+        const pendingItemRes = await fetch("/api/pending-items", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -51,6 +55,10 @@ export function ReclameAquiForm() {
             question: message,
           }),
         });
+        if (!pendingItemRes.ok) {
+          setStatus("error");
+          return;
+        }
       }
 
       setStatus("sent");
