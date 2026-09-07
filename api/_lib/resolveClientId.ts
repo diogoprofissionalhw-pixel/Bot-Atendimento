@@ -2,9 +2,10 @@ import type { VercelRequest } from "@vercel/node";
 import { supabaseAdmin } from "./supabaseAdmin.js";
 
 // Trava positiva: o atalho de dev só ativa com VERCEL_ENV explicitamente
-// "development" ou "preview". Ausente (ex.: produção, ou rodando fora da
-// Vercel sem essa env var) conta como produção — nunca ativa por omissão.
-const DEV_SHORTCUT_ALLOWED = process.env.VERCEL_ENV === "development" || process.env.VERCEL_ENV === "preview";
+// "development". Ausente ou "preview"/"production" (ex.: produção, preview,
+// ou rodando fora da Vercel sem essa env var) conta como produção — nunca
+// ativa por omissão.
+const DEV_SHORTCUT_ALLOWED = process.env.VERCEL_ENV === "development";
 
 /**
  * Deriva o client_id a partir do Host da requisição (mapa domínio ->
