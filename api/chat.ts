@@ -30,11 +30,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "conversationId e question são obrigatórios" });
   }
 
-  const { data: conversation } = await supabaseAdmin
+  const { data: conversation, error: conversationError } = await supabaseAdmin
     .from("conversations")
     .select("client_id")
     .eq("id", conversationId)
     .single();
+
+  // PGRST116 = nenhuma linha encontrada pelo .single(): conversa realmente
+  // não existe, trata como 404. Qualquer outro erro é falha real de
+  // DB/rede e não deve ser mascarada como "não encontrada".
+  if (conversationError && conversationError.code !== "PGRST116") {
+    console.error("Erro ao buscar conversa:", conversationError);
+    return res.status(500).json({ error: "Erro ao buscar conversa" });
+  }
 
   if (!conversation || conversation.client_id !== clientId) {
     return res.status(404).json({ error: "Conversa não encontrada" });
