@@ -1,23 +1,28 @@
 import { useEffect, useState } from "react";
-import { supabase, CURRENT_CLIENT_ID } from "../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import type { AwaitingApprovalItem, PendingItem } from "../types";
 
 export function Painel() {
+  const [clientId, setClientId] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingItem[]>([]);
   const [awaiting, setAwaiting] = useState<AwaitingApprovalItem[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
+  // A RLS (tenant_isolation, baseada no claim app_metadata.client_id do JWT)
+  // já restringe as queries abaixo ao tenant do usuário logado — nenhum
+  // filtro por client_id é necessário aqui. Só lemos o client_id da própria
+  // sessão porque messages/awaiting_approval têm client_id NOT NULL; mesmo
+  // que esse valor seja adulterado no cliente, a RLS rejeita qualquer
+  // insert/update com client_id diferente do da sessão autenticada.
   async function load() {
     const [pendingRes, awaitingRes] = await Promise.all([
       supabase
         .from("pending_items")
         .select("id, conversation_id, question, status, created_at")
-        .eq("client_id", CURRENT_CLIENT_ID)
         .eq("status", "open"),
       supabase
         .from("awaiting_approval")
         .select("id, conversation_id, ai_suggestion, ai_confidence, status, created_at")
-        .eq("client_id", CURRENT_CLIENT_ID)
         .eq("status", "pending"),
     ]);
     setPending(pendingRes.data ?? []);
@@ -25,13 +30,17 @@ export function Painel() {
   }
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setClientId((data.session?.user.app_metadata.client_id as string | undefined) ?? null);
+    });
     load();
   }, []);
 
   async function answerPending(item: PendingItem, answer: string) {
+    if (!clientId) return;
     await supabase.from("messages").insert({
       conversation_id: item.conversation_id,
-      client_id: CURRENT_CLIENT_ID,
+      client_id: clientId,
       sender: "staff",
       body: answer,
     });
@@ -40,9 +49,10 @@ export function Painel() {
   }
 
   async function approveItem(item: AwaitingApprovalItem, finalResponse: string, editedFlag: boolean) {
+    if (!clientId) return;
     await supabase.from("messages").insert({
       conversation_id: item.conversation_id,
-      client_id: CURRENT_CLIENT_ID,
+      client_id: clientId,
       sender: editedFlag ? "staff" : "ai",
       body: finalResponse,
     });

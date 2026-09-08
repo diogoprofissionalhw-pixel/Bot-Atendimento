@@ -8,7 +8,3 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// client_id do tenant atual — em produção isso vem de config por domínio/subdomínio
-// ou é embutido no build de cada cliente revendido.
-export const CURRENT_CLIENT_ID = import.meta.env.VITE_CLIENT_ID as string;
