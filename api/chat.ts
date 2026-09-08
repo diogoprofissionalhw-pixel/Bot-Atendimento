@@ -95,19 +95,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (decision.confidence >= LOW_CONFIDENCE_FLOOR) {
-    await supabaseAdmin.from("awaiting_approval").insert({
-      client_id: clientId,
-      conversation_id: conversationId,
-      ai_suggestion: decision.answer,
-      ai_confidence: decision.confidence,
-    });
-    return res.json({ status: "awaiting_approval" });
+    const { data: item } = await supabaseAdmin
+      .from("awaiting_approval")
+      .insert({
+        client_id: clientId,
+        conversation_id: conversationId,
+        ai_suggestion: decision.answer,
+        ai_confidence: decision.confidence,
+      })
+      .select("id")
+      .single();
+    return res.json({ status: "awaiting_approval", itemType: "awaiting_approval", itemId: item?.id });
   }
 
-  await supabaseAdmin.from("pending_items").insert({
-    client_id: clientId,
-    conversation_id: conversationId,
-    question,
-  });
-  return res.json({ status: "pending" });
+  const { data: item } = await supabaseAdmin
+    .from("pending_items")
+    .insert({
+      client_id: clientId,
+      conversation_id: conversationId,
+      question,
+    })
+    .select("id")
+    .single();
+  return res.json({ status: "pending", itemType: "pending_items", itemId: item?.id });
 }
