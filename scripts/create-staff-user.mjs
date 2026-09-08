@@ -18,6 +18,12 @@ if (!email || !password || !clientId) {
   process.exit(1);
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+if (!UUID_RE.test(clientId)) {
+  console.error(`client_id "${clientId}" não é um UUID válido. current_client_id() em 0001_init.sql faz ::uuid nesse valor — um formato errado só falharia mais tarde, em runtime.`);
+  process.exit(1);
+}
+
 const supabaseUrl = process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
