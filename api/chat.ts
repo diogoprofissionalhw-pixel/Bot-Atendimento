@@ -95,19 +95,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (decision.confidence >= LOW_CONFIDENCE_FLOOR) {
-    await supabaseAdmin.from("awaiting_approval").insert({
-      client_id: clientId,
-      conversation_id: conversationId,
-      ai_suggestion: decision.answer,
-      ai_confidence: decision.confidence,
-    });
-    return res.json({ status: "awaiting_approval" });
+    const { data: awaitingItem, error: awaitingError } = await supabaseAdmin
+      .from("awaiting_approval")
+      .insert({
+        client_id: clientId,
+        conversation_id: conversationId,
+        ai_suggestion: decision.answer,
+        ai_confidence: decision.confidence,
+      })
+      .select("id")
+      .single();
+
+    if (awaitingError || !awaitingItem) {
+      console.error("Erro ao registrar awaiting_approval:", awaitingError);
+      return res.status(500).json({ error: "Falha ao registrar item para aprovação" });
+    }
+    return res.json({ status: "awaiting_approval", itemType: "awaiting_approval", itemId: awaitingItem.id });
   }
 
-  await supabaseAdmin.from("pending_items").insert({
-    client_id: clientId,
-    conversation_id: conversationId,
-    question,
-  });
-  return res.json({ status: "pending" });
+  const { data: pendingItem, error: pendingError } = await supabaseAdmin
+    .from("pending_items")
+    .insert({
+      client_id: clientId,
+      conversation_id: conversationId,
+      question,
+    })
+    .select("id")
+    .single();
+
+  if (pendingError || !pendingItem) {
+    console.error("Erro ao registrar pending_item:", pendingError);
+    return res.status(500).json({ error: "Falha ao registrar pendência" });
+  }
+  return res.json({ status: "pending", itemType: "pending_items", itemId: pendingItem.id });
 }

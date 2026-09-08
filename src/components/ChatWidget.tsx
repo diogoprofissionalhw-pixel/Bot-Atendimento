@@ -2,12 +2,22 @@ import { useState } from "react";
 import type { ChatMessage } from "../types";
 
 type ChatStatus = "answered" | "awaiting_approval" | "pending";
+type ItemType = "pending_items" | "awaiting_approval";
+type PendingContact = { itemType: ItemType; itemId: string };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function ChatWidget() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingContact, setPendingContact] = useState<PendingContact | null>(null);
+  const [emailAsked, setEmailAsked] = useState(false);
+
+  function appendMessage(sender: ChatMessage["sender"], body: string) {
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), sender, body, created_at: new Date().toISOString() }]);
+  }
 
   async function ensureConversation(): Promise<string> {
     if (conversationId) return conversationId;
@@ -22,25 +32,48 @@ export function ChatWidget() {
     return data.id;
   }
 
+  async function submitContactEmail(convId: string, contact: PendingContact, email: string) {
+    try {
+      const res = await fetch("/api/contact-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: convId, itemType: contact.itemType, itemId: contact.itemId, email }),
+      });
+      if (!res.ok) throw new Error("Falha ao registrar e-mail");
+      appendMessage("ai", "Obrigado! Assim que tivermos uma resposta, entramos em contato por esse e-mail.");
+    } catch {
+      appendMessage("ai", "Não consegui salvar seu e-mail agora, mas sua mensagem já está registrada — nossa equipe responde por aqui.");
+    }
+  }
+
   async function handleSend() {
     if (!input.trim() || loading) return;
     setLoading(true);
-    const question = input.trim();
+    const text = input.trim();
     setInput("");
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), sender: "customer", body: question, created_at: new Date().toISOString() },
-    ]);
+    appendMessage("customer", text);
 
     try {
       const convId = await ensureConversation();
+
+      if (pendingContact) {
+        const contact = pendingContact;
+        setPendingContact(null);
+        if (EMAIL_RE.test(text)) {
+          await submitContactEmail(convId, contact, text);
+          return;
+        }
+        // Não parece e-mail: trata como "prefiro não informar" e segue o
+        // texto como uma pergunta normal — nunca descarta a mensagem.
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: convId, question }),
+        body: JSON.stringify({ conversationId: convId, question: text }),
       });
       if (!res.ok) throw new Error("Falha ao obter resposta do servidor");
-      const data: { status: ChatStatus; answer?: string } = await res.json();
+      const data: { status: ChatStatus; answer?: string; itemType?: ItemType; itemId?: string } = await res.json();
 
       const reply =
         data.status === "answered"
@@ -49,20 +82,15 @@ export function ChatWidget() {
             ? "Recebi sua pergunta e vou confirmar a resposta com a equipe antes de te responder."
             : "Não tenho certeza da resposta — encaminhei para a nossa equipe, que vai te responder em breve.";
 
-      setMessages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), sender: "ai", body: reply, created_at: new Date().toISOString() },
-      ]);
+      appendMessage("ai", reply);
+
+      if ((data.status === "awaiting_approval" || data.status === "pending") && !emailAsked && data.itemType && data.itemId) {
+        setEmailAsked(true);
+        setPendingContact({ itemType: data.itemType, itemId: data.itemId });
+        appendMessage("ai", "Se quiser, deixe seu e-mail que a equipe te avisa por lá assim que tiver uma resposta — ou pode só continuar perguntando.");
+      }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          sender: "ai",
-          body: "Ocorreu um erro ao processar sua mensagem. Tente novamente.",
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      appendMessage("ai", "Ocorreu um erro ao processar sua mensagem. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -86,7 +114,7 @@ export function ChatWidget() {
       <div className="flex gap-2 border-t border-gray-200 p-2">
         <input
           className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
-          placeholder="Digite sua pergunta..."
+          placeholder={pendingContact ? "seu e-mail (opcional)..." : "Digite sua pergunta..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}

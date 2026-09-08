@@ -18,11 +18,11 @@ export function Painel() {
     const [pendingRes, awaitingRes] = await Promise.all([
       supabase
         .from("pending_items")
-        .select("id, conversation_id, question, status, created_at")
+        .select("id, conversation_id, question, customer_email, status, created_at")
         .eq("status", "open"),
       supabase
         .from("awaiting_approval")
-        .select("id, conversation_id, ai_suggestion, ai_confidence, status, created_at")
+        .select("id, conversation_id, ai_suggestion, ai_confidence, customer_email, status, created_at")
         .eq("status", "pending"),
     ]);
     setPending(pendingRes.data ?? []);
@@ -77,6 +77,7 @@ export function Painel() {
           {pending.map((item) => (
             <div key={item.id} className="rounded border border-gray-200 p-3">
               <p className="text-sm text-gray-700">{item.question}</p>
+              <p className="mt-1 text-xs text-gray-500">Contato: {item.customer_email ?? "não informado"}</p>
               <textarea
                 className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-sm"
                 rows={2}
@@ -104,6 +105,7 @@ export function Painel() {
               <p className="text-xs text-gray-500">
                 Confiança da IA: {item.ai_confidence != null ? Math.round(item.ai_confidence * 100) : "?"}%
               </p>
+              <p className="mt-1 text-xs text-gray-500">Contato: {item.customer_email ?? "não informado"}</p>
               <textarea
                 className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-sm"
                 rows={2}
