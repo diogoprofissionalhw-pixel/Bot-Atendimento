@@ -7,9 +7,16 @@ type PendingContact = { itemType: ItemType; itemId: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const GREETING: ChatMessage = {
+  id: "greeting",
+  sender: "ai",
+  body: "Oi! Pode perguntar o que precisar que eu te ajudo.",
+  created_at: new Date().toISOString(),
+};
+
 export function ChatWidget() {
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingContact, setPendingContact] = useState<PendingContact | null>(null);
@@ -97,7 +104,7 @@ export function ChatWidget() {
   }
 
   return (
-    <div className="flex h-96 flex-col rounded-lg border border-gray-200">
+    <div className="flex h-64 flex-col rounded-lg border border-gray-200">
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {messages.map((m) => (
           <div key={m.id} className={m.sender === "customer" ? "text-right" : "text-left"}>
