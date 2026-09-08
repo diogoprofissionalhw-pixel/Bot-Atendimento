@@ -25,14 +25,15 @@ export function Faq() {
   }
 
   return (
-    <div className="divide-y divide-gray-200 rounded-lg border border-gray-200">
+    <div className="divide-y divide-gray-200">
       {entries.map((entry) => (
-        <div key={entry.id} className="p-4">
+        <div key={entry.id} className="py-3 first:pt-0 last:pb-0">
           <button
-            className="w-full text-left font-medium"
+            className="flex w-full items-center justify-between gap-4 text-left font-medium text-gray-900 hover:text-[var(--brand-primary)]"
             onClick={() => setOpenId(openId === entry.id ? null : entry.id)}
           >
-            {entry.question}
+            <span>{entry.question}</span>
+            <span className="text-gray-400">{openId === entry.id ? "−" : "+"}</span>
           </button>
           {openId === entry.id && <p className="mt-2 text-sm text-gray-600">{entry.answer}</p>}
         </div>

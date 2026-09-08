@@ -103,7 +103,7 @@ export function ChatWidget() {
           <div key={m.id} className={m.sender === "customer" ? "text-right" : "text-left"}>
             <span
               className={`inline-block rounded-lg px-3 py-2 text-sm ${
-                m.sender === "customer" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
+                m.sender === "customer" ? "bg-[var(--brand-primary)] text-white" : "bg-gray-100 text-gray-800"
               }`}
             >
               {m.body}
@@ -113,7 +113,7 @@ export function ChatWidget() {
       </div>
       <div className="flex gap-2 border-t border-gray-200 p-2">
         <input
-          className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+          className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
           placeholder={pendingContact ? "seu e-mail (opcional)..." : "Digite sua pergunta..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -121,7 +121,7 @@ export function ChatWidget() {
           disabled={loading}
         />
         <button
-          className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded bg-[var(--brand-primary)] px-4 py-2 text-sm text-white transition hover:brightness-90 disabled:opacity-50"
           onClick={handleSend}
           disabled={loading}
         >
