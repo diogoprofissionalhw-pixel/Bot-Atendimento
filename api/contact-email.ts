@@ -75,7 +75,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .eq("client_id", clientId);
 
   if (updateError) {
-    return res.status(500).json({ error: "Falha ao registrar e-mail de contato", detail: updateError.message });
+    console.error("Erro ao registrar e-mail de contato:", updateError);
+    return res.status(500).json({ error: "Falha ao registrar e-mail de contato" });
   }
 
   return res.json({ status: "ok" });
