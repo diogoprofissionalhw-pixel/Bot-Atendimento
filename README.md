@@ -69,8 +69,6 @@ teste — os endpoints usam esse valor quando o Host da requisição é
 
 ## Em aberto (não implementado ainda)
 
-- **Autenticação do painel interno** (`/painel` está sem guard de auth agora).
-  Precisa de Supabase Auth com claim `client_id` no `app_metadata` do usuário.
 - **Recebimento de e-mail de entrada** (webhook/IMAP) — hoje o canal de
   e-mail só cobre o envio via Reclame Aqui, não a leitura de respostas por
   e-mail do cliente.
