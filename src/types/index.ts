@@ -15,6 +15,7 @@ export interface PendingItem {
   id: string;
   conversation_id: string;
   question: string;
+  customer_email: string | null;
   status: "open" | "answered";
   created_at: string;
 }
@@ -24,6 +25,7 @@ export interface AwaitingApprovalItem {
   conversation_id: string;
   ai_suggestion: string;
   ai_confidence: number | null;
+  customer_email: string | null;
   status: "pending" | "approved" | "edited" | "rejected";
   created_at: string;
 }
