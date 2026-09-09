@@ -2,6 +2,7 @@ export interface KnowledgeBaseEntry {
   id: string;
   question: string;
   answer: string;
+  audience: "medico" | "rede" | "ambos";
 }
 
 export interface ChatMessage {

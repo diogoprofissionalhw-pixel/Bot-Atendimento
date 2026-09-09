@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { data, error } = await supabaseAdmin
     .from("knowledge_base")
-    .select("id, question, answer")
+    .select("id, question, answer, audience")
     .eq("client_id", clientId);
 
   if (error) {
