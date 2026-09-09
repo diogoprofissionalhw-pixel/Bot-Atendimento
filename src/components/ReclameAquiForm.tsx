@@ -73,7 +73,7 @@ export function ReclameAquiForm() {
   if (!open) {
     return (
       <button
-        className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white"
+        className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:brightness-90"
         onClick={() => setOpen(true)}
       >
         Reclame Aqui
@@ -86,9 +86,9 @@ export function ReclameAquiForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-gray-200 p-4">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <input
-        className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
         placeholder="Seu nome"
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -96,14 +96,14 @@ export function ReclameAquiForm() {
       />
       <input
         type="email"
-        className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
         placeholder="Seu e-mail"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
       />
       <textarea
-        className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
         placeholder="Descreva sua reclamação"
         rows={4}
         value={message}
@@ -113,7 +113,7 @@ export function ReclameAquiForm() {
       <div className="flex gap-2">
         <button
           type="submit"
-          className="rounded bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded bg-red-600 px-4 py-2 text-sm text-white transition hover:brightness-90 disabled:opacity-50"
           disabled={status === "sending"}
         >
           {status === "sending" ? "Enviando..." : "Enviar"}

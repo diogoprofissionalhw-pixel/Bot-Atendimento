@@ -7,9 +7,16 @@ type PendingContact = { itemType: ItemType; itemId: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const GREETING: ChatMessage = {
+  id: "greeting",
+  sender: "ai",
+  body: "Oi! Pode perguntar o que precisar que eu te ajudo.",
+  created_at: new Date().toISOString(),
+};
+
 export function ChatWidget() {
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingContact, setPendingContact] = useState<PendingContact | null>(null);
@@ -97,13 +104,13 @@ export function ChatWidget() {
   }
 
   return (
-    <div className="flex h-96 flex-col rounded-lg border border-gray-200">
+    <div className="flex h-64 flex-col rounded-lg border border-gray-200">
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {messages.map((m) => (
           <div key={m.id} className={m.sender === "customer" ? "text-right" : "text-left"}>
             <span
               className={`inline-block rounded-lg px-3 py-2 text-sm ${
-                m.sender === "customer" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
+                m.sender === "customer" ? "bg-[var(--brand-primary)] text-white" : "bg-gray-100 text-gray-800"
               }`}
             >
               {m.body}
@@ -113,7 +120,7 @@ export function ChatWidget() {
       </div>
       <div className="flex gap-2 border-t border-gray-200 p-2">
         <input
-          className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+          className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
           placeholder={pendingContact ? "seu e-mail (opcional)..." : "Digite sua pergunta..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -121,7 +128,7 @@ export function ChatWidget() {
           disabled={loading}
         />
         <button
-          className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded bg-[var(--brand-primary)] px-4 py-2 text-sm text-white transition hover:brightness-90 disabled:opacity-50"
           onClick={handleSend}
           disabled={loading}
         >
